@@ -1,7 +1,7 @@
 package database;
 
 /*
-Описание столбца таблицы
+Описание столбца таблицы.
 */
 public class Column {
     private String name;
