@@ -1,12 +1,13 @@
 package database;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /*
 База данных.
 */
-public class Database {
+public class Database implements Serializable {
     private Map<String, Table> tables;
 
     public Database() {

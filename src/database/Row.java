@@ -1,5 +1,6 @@
 package database;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,7 +8,7 @@ import java.util.Map;
 Одна запись таблицы.
 */
 
-public class Row {
+public class Row implements Serializable {
     private Map<String, Object> values;
 
     public Row() {

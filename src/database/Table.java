@@ -1,12 +1,13 @@
 package database;
 
 import java.util.List;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /*
 Таблица базы данных.
 */
-public class Table {
+public class Table implements Serializable {
     private String name;
     private List<Row> rows;
     private List<Column> columns;

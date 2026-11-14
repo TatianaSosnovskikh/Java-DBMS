@@ -1,9 +1,11 @@
 package database;
 
+import java.io.Serializable;
+
 /*
 Описание столбца таблицы.
 */
-public class Column {
+public class Column implements Serializable {
     private String name;
     private DataType type;
     private boolean primaryKey;
