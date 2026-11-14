@@ -3,6 +3,9 @@ package storage;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.io.File;
 
 import database.Database;
 
@@ -22,6 +25,16 @@ public class DatabaseStorage {
     }
 
     public Database load() {
-        return new Database();
+        File file = new File(FILE_NAME);
+
+        if (!file.exists()) {
+            return new Database();
+        }
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            return (Database) in.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Database();
+        }
     }
 }
