@@ -28,6 +28,7 @@ public class DatabaseStorage {
         File file = new File(FILE_NAME);
 
         if (!file.exists()) {
+            System.out.println("Файл базы данных был не найден. Создаётся новая база");
             return new Database();
         }
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
