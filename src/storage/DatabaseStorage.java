@@ -18,7 +18,7 @@ public class DatabaseStorage {
     public void save(Database database) {
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
             out.writeObject(database);
-            System.out.println("База данных сохоранена");
+            System.out.println("База данных сохранена");
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,4 +1,5 @@
 import database.*;
+import storage.DatabaseStorage;
 
 public class Main {
     public static void main(String[] args) {
@@ -19,5 +20,12 @@ public class Main {
         database.createTable(goods);
 
         System.out.println("База данных создана");
+
+        DatabaseStorage storage = new DatabaseStorage();
+        storage.save(database);
+        Database loadedDatabase = storage.load();
+
+        System.out.println("Таблицы:");
+        System.out.println(loadedDatabase.getTables().keySet());
     }
 }
