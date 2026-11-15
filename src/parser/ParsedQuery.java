@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ParsedQuery 
+public class ParsedQuery{
     public enum QueryType {
         INSERT, SELECT, UPDATE, DELETE, CREATE_TABLE, DROP_TABLE, CREATE_INDEX
     }
