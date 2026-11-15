@@ -1,7 +1,18 @@
 import database.*;
 import storage.DatabaseStorage;
 
+/**
+ * Главный класс приложения.
+ *
+ * <p>
+ * Создание тестовой базы данных, проверка сохранения и загрузки данных.
+ */
 public class Main {
+    /**
+     * Точка входа в программу.
+     *
+     * @param args аргументы командной строки
+     */
     public static void main(String[] args) {
         Database database = new Database();
         Table categories = new Table("categories");

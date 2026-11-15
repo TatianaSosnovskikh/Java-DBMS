@@ -1,20 +1,29 @@
 package storage;
 
+import database.Database;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.FileInputStream;
 import java.io.ObjectInputStream;
-import java.io.File;
+import java.io.ObjectOutputStream;
 
-import database.Database;
-
-/*
-Сохранение и загрузка базы данных.
+/**
+ * Выполняет сохранение и загрузку базы данных.
+ *
+ * <p>
+ * Использует механизм сериализации Java для записи базы данных в файл и
+ * восстановления при
+ * запуске программы.
  */
 public class DatabaseStorage {
     private static final String FILE_NAME = "data/database.dat";
 
+    /**
+     * Сохраняет базу данных в файл.
+     *
+     * @param database сохраняемая база данных
+     */
     public void save(Database database) {
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
             out.writeObject(database);
@@ -24,6 +33,14 @@ public class DatabaseStorage {
         }
     }
 
+    /**
+     * Загружает базу данных из файла.
+     *
+     * <p>
+     * Если файл отсутствует, то создаётся новая пустая база данных.
+     *
+     * @return объект базы данных
+     */
     public Database load() {
         File file = new File(FILE_NAME);
 
