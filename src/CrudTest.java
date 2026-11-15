@@ -19,6 +19,27 @@ public class CrudTest {
 
         QueryExecutor executor =
                 new QueryExecutor(database, new CrudHandler());
+        // DATE и BOOLEAN
+        Table typeTest = new Table("type_test");
+        typeTest.addColumn(new Column("id", DataType.INTEGER, true));
+        typeTest.addColumn(new Column("created", DataType.DATE, false));
+        typeTest.addColumn(new Column("active", DataType.BOOLEAN, false));
+        database.createTable(typeTest);
+
+        executor.execute(
+                "INSERT INTO type_test (id, created, active) " +
+                        "VALUES (1, '2026-11-15', true)"
+        );
+
+        List<Row> typeRows = (List<Row>) executor.execute(
+                "SELECT * FROM type_test"
+        );
+
+        check(typeRows.size() == 1, "DATE/BOOLEAN: добавление записи");
+        check(typeRows.get(0).getValue("created").toString()
+                .equals("2026-11-15"), "DATE: сохранение даты");
+        check(Boolean.TRUE.equals(typeRows.get(0).getValue("active")),
+                "BOOLEAN: сохранение true");
 
         // INSERT
         executor.execute(

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 Таблица базы данных.
 */
 public class Table implements Serializable {
+    private static final long serialVersionUID = 7723786006977745143L;
     private String name;
     private List<Row> rows;
     private List<Column> columns;
