@@ -19,6 +19,7 @@ public class CrudTest {
 
         QueryExecutor executor =
                 new QueryExecutor(database, new CrudHandler());
+
         // DATE и BOOLEAN
         Table typeTest = new Table("type_test");
         typeTest.addColumn(new Column("id", DataType.INTEGER, true));
@@ -43,14 +44,17 @@ public class CrudTest {
 
         // INSERT
         executor.execute(
-                "INSERT INTO goods (id, name, price) VALUES (1, 'Apple', 100.0)"
+                "INSERT INTO goods (id, name, price) " +
+                        "VALUES (1, 'Apple', 100.0)"
         );
+
         // Проверка дубликата первичного ключа
         boolean duplicateRejected = false;
 
         try {
             executor.execute(
-                    "INSERT INTO goods (id, name, price) VALUES (1, 'Banana', 200.0)"
+                    "INSERT INTO goods (id, name, price) " +
+                            "VALUES (1, 'Banana', 200.0)"
             );
         } catch (Exception e) {
             duplicateRejected = true;
@@ -87,6 +91,71 @@ public class CrudTest {
                 "SELECT * FROM goods"
         );
         check(rows.isEmpty(), "DELETE: удаление записи");
+
+        // CREATE TABLE
+        executor.execute(
+                "CREATE TABLE integration_test (" +
+                        "id INTEGER PRIMARY KEY, " +
+                        "name STRING, " +
+                        "price DOUBLE)"
+        );
+
+        check(database.getTable("integration_test") != null,
+                "CREATE TABLE: создание таблицы");
+
+        // INSERT нескольких записей
+        executor.execute(
+                "INSERT INTO integration_test (id, name, price) VALUES " +
+                        "(1, 'Apple', 100.0), " +
+                        "(2, 'Banana', 50.0), " +
+                        "(3, 'Orange', 80.0)"
+        );
+
+        List<Row> integrationRows = (List<Row>) executor.execute(
+                "SELECT * FROM integration_test"
+        );
+
+        check(integrationRows.size() == 3,
+                "INSERT: несколько записей");
+
+        // SELECT WHERE
+        List<Row> filteredRows = (List<Row>) executor.execute(
+                "SELECT * FROM integration_test WHERE price > 60"
+        );
+
+        check(filteredRows.size() == 2,
+                "SELECT WHERE: фильтрация");
+
+        // UPDATE WHERE
+        executor.execute(
+                "UPDATE integration_test SET price = 70.0 WHERE id = 2"
+        );
+
+        List<Row> updatedRows = (List<Row>) executor.execute(
+                "SELECT * FROM integration_test WHERE id = 2"
+        );
+
+        check(updatedRows.size() == 1 &&
+                        updatedRows.get(0).getValue("price").equals(70.0),
+                "UPDATE WHERE: изменение записи");
+
+        // DELETE WHERE
+        executor.execute(
+                "DELETE FROM integration_test WHERE id = 1"
+        );
+
+        List<Row> remainingRows = (List<Row>) executor.execute(
+                "SELECT * FROM integration_test"
+        );
+
+        check(remainingRows.size() == 2,
+                "DELETE WHERE: удаление записи");
+
+        // DROP TABLE
+        executor.execute("DROP TABLE integration_test");
+
+        check(database.getTable("integration_test") == null,
+                "DROP TABLE: удаление таблицы");
 
         System.out.println();
         System.out.println("ИТОГ: " + passed
