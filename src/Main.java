@@ -1,5 +1,7 @@
 import database.*;
 import storage.DatabaseStorage;
+import executor.CrudHandler;
+import executor.QueryExecutor;
 
 public class Main {
     public static void main(String[] args) {
@@ -27,5 +29,63 @@ public class Main {
 
         System.out.println("Таблицы:");
         System.out.println(loadedDatabase.getTables().keySet());
+
+// Подключение обработчика CRUD-операций
+        CrudHandler crudHandler = new CrudHandler();
+        QueryExecutor queryExecutor =
+                new QueryExecutor(loadedDatabase, crudHandler);
+
+// Добавление категории
+        queryExecutor.execute(
+                "INSERT INTO categories (id, name) VALUES (1, 'Food')"
+        );
+
+// Добавление товара
+        queryExecutor.execute(
+                "INSERT INTO goods (id, categoryId, name, price) VALUES (1, 1, 'Apple', 100.0)"
+        );
+
+// Вывод товаров
+        System.out.println("Товары:");
+        printTable(loadedDatabase.getTable("goods"));
+
+// Обновление товара
+        System.out.println(
+                queryExecutor.execute(
+                        "UPDATE goods SET price = 120.0 WHERE id = 1"
+                )
+        );
+
+// Удаление товара
+        System.out.println(
+                queryExecutor.execute(
+                        "DELETE FROM goods WHERE id = 1"
+                )
+        );
+
+// Сохраняем изменения
+        storage.save(loadedDatabase);
+    }
+    private static void printTable(Table table) {
+        // Заголовки
+        for (Column column : table.getColumns()) {
+            System.out.printf("| %-15s ", column.getName());
+        }
+        System.out.println("|");
+
+        // Разделитель
+        for (Column column : table.getColumns()) {
+            System.out.print("-------------------");
+        }
+        System.out.println();
+
+        // Строки таблицы
+        for (Row row : table.getRows()) {
+            for (Column column : table.getColumns()) {
+                Object value = row.getValue(column.getName());
+                System.out.printf("| %-15s ", value == null ? "null" : value);
+            }
+            System.out.println("|");
+        }
     }
 }
