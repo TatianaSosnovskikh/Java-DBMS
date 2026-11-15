@@ -1,8 +1,10 @@
 package index;
+
 import database.Column;
 import database.Database;
 import database.Row;
 import database.Table;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -79,8 +81,7 @@ public class IndexManager {
             String tableName,
             String columnName,
             String operator,
-            String conditionValue
-    ) {
+            String conditionValue) {
         Index foundIndex = null;
 
         for (Index index : indexes.values()) {
@@ -131,10 +132,9 @@ public class IndexManager {
         int comparison;
 
         if (actual instanceof Number && expected instanceof Number) {
-            comparison = Double.compare(
-                    ((Number) actual).doubleValue(),
-                    ((Number) expected).doubleValue()
-            );
+            comparison =
+                    Double.compare(
+                            ((Number) actual).doubleValue(), ((Number) expected).doubleValue());
         } else if (actual instanceof Boolean && expected instanceof Boolean) {
             comparison = Boolean.compare((Boolean) actual, (Boolean) expected);
         } else {

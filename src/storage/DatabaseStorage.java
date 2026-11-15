@@ -1,20 +1,19 @@
-
 package storage;
 
 import database.Database;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.File;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-import database.Database;
-
 /**
- * Класс для сохранения и загрузки базы данных.
+ * Класс для сохранения и загрузки базы данных на диск с использованием стандартной сериализации
+ * Java.
  */
 public class DatabaseStorage {
 
@@ -22,8 +21,7 @@ public class DatabaseStorage {
     private static final String TEMP_FILE_NAME = "data/database.tmp";
 
     /**
-     * Сохраняет базу данных во временный файл,
-     * а затем заменяет основной файл.
+     * Сохраняет базу данных во временный файл, а затем заменяет основной файл.
      *
      * @param database база данных для сохранения
      * @throws IOException если произошла ошибка сохранения
@@ -32,15 +30,13 @@ public class DatabaseStorage {
         File file = new File(FILE_NAME);
         File directory = file.getParentFile();
 
-        if (directory != null && !directory.exists()
-                && !directory.mkdirs()) {
+        if (directory != null && !directory.exists() && !directory.mkdirs()) {
             throw new IOException("Не удалось создать папку для базы данных");
         }
 
         File tempFile = new File(TEMP_FILE_NAME);
 
-        try (ObjectOutputStream out =
-                     new ObjectOutputStream(new FileOutputStream(tempFile))) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(tempFile))) {
             out.writeObject(database);
             out.flush();
         }
@@ -50,17 +46,12 @@ public class DatabaseStorage {
                     tempFile.toPath(),
                     file.toPath(),
                     StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE
-            );
+                    StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             // Если атомарная замена не поддерживается,
             // пробуем обычную замену.
             try {
-                Files.move(
-                        tempFile.toPath(),
-                        file.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING
-                );
+                Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException moveError) {
                 moveError.addSuppressed(e);
                 throw moveError;
@@ -85,8 +76,7 @@ public class DatabaseStorage {
             return new Database();
         }
 
-        try (ObjectInputStream in =
-                     new ObjectInputStream(new FileInputStream(file))) {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
 
             Object object = in.readObject();
 

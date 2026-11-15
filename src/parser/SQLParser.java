@@ -1,4 +1,5 @@
 package parser;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -36,10 +37,11 @@ public class SQLParser {
         }
         throw new IllegalArgumentException("Неизвестная SQL-команда: " + sql);
     }
+
     private ParsedQuery parseInsert(String sql) {
-        Pattern pattern = Pattern.compile(
-            "(?is)^INSERT\\s+INTO\\s+(\\w+)\\s*(?:\\((.*?)\\))?\\s+VALUES\\s+(.+)$"
-        );
+        Pattern pattern =
+                Pattern.compile(
+                        "(?is)^INSERT\\s+INTO\\s+(\\w+)\\s*(?:\\((.*?)\\))?\\s+VALUES\\s+(.+)$");
         Matcher matcher = pattern.matcher(sql);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Неверный формат INSERT");
@@ -57,15 +59,16 @@ public class SQLParser {
         }
         for (List<String> row : rows) {
             if (!query.getColumns().isEmpty() && query.getColumns().size() != row.size()) {
-                throw new IllegalArgumentException("Количество столбцов не совпадает с количеством значений");
+                throw new IllegalArgumentException(
+                        "Количество столбцов не совпадает с количеством значений");
             }
         }
         return query;
     }
+
     private ParsedQuery parseSelect(String sql) {
-        Pattern pattern = Pattern.compile(
-            "(?is)^SELECT\\s+(.*?)\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.+))?$"
-        );
+        Pattern pattern =
+                Pattern.compile("(?is)^SELECT\\s+(.*?)\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.+))?$");
         Matcher matcher = pattern.matcher(sql);
 
         if (!matcher.matches()) {
@@ -85,10 +88,10 @@ public class SQLParser {
         }
         return query;
     }
+
     private ParsedQuery parseUpdate(String sql) {
-        Pattern pattern = Pattern.compile(
-            "(?is)^UPDATE\\s+(\\w+)\\s+SET\\s+(.+?)(?:\\s+WHERE\\s+(.+))?$"
-        );
+        Pattern pattern =
+                Pattern.compile("(?is)^UPDATE\\s+(\\w+)\\s+SET\\s+(.+?)(?:\\s+WHERE\\s+(.+))?$");
         Matcher matcher = pattern.matcher(sql);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Неверный формат UPDATE");
@@ -114,10 +117,9 @@ public class SQLParser {
         }
         return query;
     }
+
     private ParsedQuery parseDelete(String sql) {
-        Pattern pattern = Pattern.compile(
-            "(?is)^DELETE\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.+))?$"
-        );
+        Pattern pattern = Pattern.compile("(?is)^DELETE\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.+))?$");
         Matcher matcher = pattern.matcher(sql);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Неверный формат DELETE");
@@ -130,10 +132,9 @@ public class SQLParser {
         }
         return query;
     }
+
     private void parseCondition(String condition, ParsedQuery query) {
-        Pattern pattern = Pattern.compile(
-            "(?is)^\\s*(\\w+)\\s*(>=|<=|<>|!=|=|>|<)\\s*(.+?)\\s*$"
-        );
+        Pattern pattern = Pattern.compile("(?is)^\\s*(\\w+)\\s*(>=|<=|<>|!=|=|>|<)\\s*(.+?)\\s*$");
         Matcher matcher = pattern.matcher(condition);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Неверное условие WHERE: " + condition);
@@ -142,10 +143,11 @@ public class SQLParser {
         query.setConditionOperator(matcher.group(2));
         query.setConditionValue(matcher.group(3).trim());
     }
+
     private ParsedQuery parseCreateIndex(String sql) {
-        Pattern pattern = Pattern.compile(
-            "(?is)^CREATE\\s+INDEX\\s+(\\w+)\\s+ON\\s+(\\w+)\\s*\\(\\s*(\\w+)\\s*\\)$"
-        );
+        Pattern pattern =
+                Pattern.compile(
+                        "(?is)^CREATE\\s+INDEX\\s+(\\w+)\\s+ON\\s+(\\w+)\\s*\\(\\s*(\\w+)\\s*\\)$");
         Matcher matcher = pattern.matcher(sql);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Неверный формат CREATE INDEX");
@@ -157,10 +159,9 @@ public class SQLParser {
         query.setIndexedColumn(matcher.group(3));
         return query;
     }
+
     private ParsedQuery parseCreateTable(String sql) {
-        Pattern pattern = Pattern.compile(
-            "(?is)^CREATE\\s+TABLE\\s+(\\w+)\\s*\\((.*)\\)$"
-        );
+        Pattern pattern = Pattern.compile("(?is)^CREATE\\s+TABLE\\s+(\\w+)\\s*\\((.*)\\)$");
         Matcher matcher = pattern.matcher(sql);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Неверный формат CREATE TABLE");
@@ -171,6 +172,7 @@ public class SQLParser {
         query.setColumnDefinitions(splitCommaSeparated(matcher.group(2)));
         return query;
     }
+
     private ParsedQuery parseDropTable(String sql) {
         Pattern pattern = Pattern.compile("(?is)^DROP\\s+TABLE\\s+(\\w+)$");
         Matcher matcher = pattern.matcher(sql);
@@ -182,6 +184,7 @@ public class SQLParser {
         query.setTableName(matcher.group(1));
         return query;
     }
+
     private List<String> splitCommaSeparated(String text) {
         List<String> result = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -206,37 +209,37 @@ public class SQLParser {
         }
         return result;
     }
-    
-private List<List<String>> splitValueTuples(String text) {
-    List<List<String>> result = new ArrayList<>();
-    boolean insideQuotes = false;
-    int depth = 0;
-    int start = -1;
-    for (int i = 0; i < text.length(); i++) {
-        char ch = text.charAt(i);
-        if (ch == '\'') {
-            insideQuotes = !insideQuotes;
-        }
-        if (!insideQuotes) {
-            if (ch == '(') {
-                if (depth == 0) {
-                    start = i + 1;
-                }
-                depth++;
-            } else if (ch == ')') {
-                depth--;
-                if (depth < 0) {
-                    throw new IllegalArgumentException("Неверная структура VALUES");
-                }
-                if (depth == 0) {
-                    result.add(splitCommaSeparated(text.substring(start, i)));
+
+    private List<List<String>> splitValueTuples(String text) {
+        List<List<String>> result = new ArrayList<>();
+        boolean insideQuotes = false;
+        int depth = 0;
+        int start = -1;
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '\'') {
+                insideQuotes = !insideQuotes;
+            }
+            if (!insideQuotes) {
+                if (ch == '(') {
+                    if (depth == 0) {
+                        start = i + 1;
+                    }
+                    depth++;
+                } else if (ch == ')') {
+                    depth--;
+                    if (depth < 0) {
+                        throw new IllegalArgumentException("Неверная структура VALUES");
+                    }
+                    if (depth == 0) {
+                        result.add(splitCommaSeparated(text.substring(start, i)));
+                    }
                 }
             }
         }
+        if (insideQuotes || depth != 0 || !result.isEmpty() == false) {
+            throw new IllegalArgumentException("Неверная структура VALUES");
+        }
+        return result;
     }
-    if (insideQuotes || depth != 0 || !result.isEmpty() == false) {
-        throw new IllegalArgumentException("Неверная структура VALUES");
-    }
-    return result;
-}
 }

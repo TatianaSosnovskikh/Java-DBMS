@@ -5,7 +5,9 @@ import database.DataType;
 import database.Database;
 import database.ForeignKey;
 import database.Table;
+
 import index.IndexManager;
+
 import parser.ParsedQuery;
 import parser.SQLParser;
 
@@ -79,10 +81,10 @@ public class QueryExecutor {
 
         Table table = new Table(tableName);
 
-        Pattern foreignKeyPattern = Pattern.compile(
-                "(?i)^FOREIGN\\s+KEY\\s*\\(\\s*(\\w+)\\s*\\)"
-                        + "\\s+REFERENCES\\s+(\\w+)\\s*\\(\\s*(\\w+)\\s*\\)$"
-        );
+        Pattern foreignKeyPattern =
+                Pattern.compile(
+                        "(?i)^FOREIGN\\s+KEY\\s*\\(\\s*(\\w+)\\s*\\)"
+                                + "\\s+REFERENCES\\s+(\\w+)\\s*\\(\\s*(\\w+)\\s*\\)$");
 
         // Создаём обычные столбцы.
         for (String definition : query.getColumnDefinitions()) {
@@ -95,9 +97,7 @@ public class QueryExecutor {
             String[] parts = trimmed.split("\\s+");
 
             if (parts.length < 2) {
-                throw new IllegalArgumentException(
-                        "Неверное описание столбца: " + definition
-                );
+                throw new IllegalArgumentException("Неверное описание столбца: " + definition);
             }
 
             String columnName = parts[0];
@@ -108,20 +108,15 @@ public class QueryExecutor {
             try {
                 dataType = DataType.valueOf(typeName);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Неизвестный тип данных: " + typeName
-                );
+                throw new IllegalArgumentException("Неизвестный тип данных: " + typeName);
             }
 
             boolean primaryKey = false;
 
             for (int i = 2; i < parts.length; i++) {
                 if (parts[i].equalsIgnoreCase("PRIMARY")) {
-                    if (i + 1 >= parts.length
-                            || !parts[i + 1].equalsIgnoreCase("KEY")) {
-                        throw new IllegalArgumentException(
-                                "Неверное описание PRIMARY KEY"
-                        );
+                    if (i + 1 >= parts.length || !parts[i + 1].equalsIgnoreCase("KEY")) {
+                        throw new IllegalArgumentException("Неверное описание PRIMARY KEY");
                     }
 
                     primaryKey = true;
@@ -133,9 +128,7 @@ public class QueryExecutor {
         }
 
         if (table.getColumns().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Таблица должна содержать хотя бы один столбец"
-            );
+            throw new IllegalArgumentException("Таблица должна содержать хотя бы один столбец");
         }
 
         // Обрабатываем внешние ключи.
@@ -150,8 +143,7 @@ public class QueryExecutor {
 
             if (!matcher.matches()) {
                 throw new IllegalArgumentException(
-                        "Неверное описание внешнего ключа: " + definition
-                );
+                        "Неверное описание внешнего ключа: " + definition);
             }
 
             String columnName = matcher.group(1);
@@ -169,17 +161,14 @@ public class QueryExecutor {
 
             if (localColumn == null) {
                 throw new IllegalArgumentException(
-                        "Столбец внешнего ключа не найден: " + columnName
-                );
+                        "Столбец внешнего ключа не найден: " + columnName);
             }
 
             Table referencedTable = database.getTable(referencedTableName);
 
             if (referencedTable == null) {
                 throw new IllegalArgumentException(
-                        "Таблица для внешнего ключа не найдена: "
-                                + referencedTableName
-                );
+                        "Таблица для внешнего ключа не найдена: " + referencedTableName);
             }
 
             Column referencedColumn = null;
@@ -193,29 +182,20 @@ public class QueryExecutor {
 
             if (referencedColumn == null) {
                 throw new IllegalArgumentException(
-                        "Столбец для ссылки не найден: " + referencedColumnName
-                );
+                        "Столбец для ссылки не найден: " + referencedColumnName);
             }
 
             if (!referencedColumn.isPrimaryKey()) {
                 throw new IllegalArgumentException(
-                        "Внешний ключ должен ссылаться на первичный ключ"
-                );
+                        "Внешний ключ должен ссылаться на первичный ключ");
             }
 
             if (localColumn.getType() != referencedColumn.getType()) {
-                throw new IllegalArgumentException(
-                        "Типы столбцов внешнего ключа не совпадают"
-                );
+                throw new IllegalArgumentException("Типы столбцов внешнего ключа не совпадают");
             }
 
             table.addForeignKey(
-                    new ForeignKey(
-                            columnName,
-                            referencedTableName,
-                            referencedColumnName
-                    )
-            );
+                    new ForeignKey(columnName, referencedTableName, referencedColumnName));
         }
 
         database.createTable(table);
@@ -229,19 +209,14 @@ public class QueryExecutor {
         Table table = database.getTable(tableName);
 
         if (table == null) {
-            throw new IllegalArgumentException(
-                    "Таблица не найдена: " + tableName
-            );
+            throw new IllegalArgumentException("Таблица не найдена: " + tableName);
         }
 
         for (Table otherTable : database.getTables().values()) {
             for (ForeignKey foreignKey : otherTable.getForeignKeys()) {
-                if (foreignKey.getReferencedTable()
-                        .equalsIgnoreCase(tableName)) {
+                if (foreignKey.getReferencedTable().equalsIgnoreCase(tableName)) {
                     throw new IllegalArgumentException(
-                            "Нельзя удалить таблицу: на неё ссылается "
-                                    + otherTable.getName()
-                    );
+                            "Нельзя удалить таблицу: на неё ссылается " + otherTable.getName());
                 }
             }
         }
@@ -256,16 +231,10 @@ public class QueryExecutor {
         Table table = database.getTable(query.getTableName());
 
         if (table == null) {
-            throw new IllegalArgumentException(
-                    "Таблица не найдена: " + query.getTableName()
-            );
+            throw new IllegalArgumentException("Таблица не найдена: " + query.getTableName());
         }
 
-        indexManager.createIndex(
-                query.getIndexName(),
-                table,
-                query.getIndexedColumn()
-        );
+        indexManager.createIndex(query.getIndexName(), table, query.getIndexedColumn());
 
         return "Индекс " + query.getIndexName() + " создан";
     }
@@ -278,13 +247,13 @@ public class QueryExecutor {
         if (query.getQueryType() == ParsedQuery.QueryType.SELECT
                 && query.getConditionColumn() != null) {
 
-            List<database.Row> indexedRows = indexManager.findRows(
-                    database,
-                    query.getTableName(),
-                    query.getConditionColumn(),
-                    query.getConditionOperator(),
-                    query.getConditionValue()
-            );
+            List<database.Row> indexedRows =
+                    indexManager.findRows(
+                            database,
+                            query.getTableName(),
+                            query.getConditionColumn(),
+                            query.getConditionOperator(),
+                            query.getConditionValue());
 
             if (indexedRows != null) {
                 query.setCandidateRows(indexedRows);

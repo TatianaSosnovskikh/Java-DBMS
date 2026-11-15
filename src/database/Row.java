@@ -7,8 +7,7 @@ import java.util.Map;
 /**
  * Представляет одну запись таблицы.
  *
- * <p>
- * Значения строки хрантся в виде пар "имя столбца - значение".
+ * <p>Значения строки хрантся в виде пар "имя столбца - значение".
  */
 public class Row implements Serializable {
     private Map<String, Object> values;
@@ -22,7 +21,7 @@ public class Row implements Serializable {
      * Записывает значение в указанный столбец.
      *
      * @param columnName имя столбца
-     * @param value      значение
+     * @param value значение
      */
     public void setValue(String columnName, Object value) {
         values.put(columnName, value);

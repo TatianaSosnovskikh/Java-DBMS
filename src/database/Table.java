@@ -7,8 +7,7 @@ import java.util.List;
 /**
  * Таблица базы данных.
  *
- * <p>
- * Таблица содержит список строк и список столбцов.
+ * <p>Таблица содержит список строк и список столбцов.
  */
 public class Table implements Serializable {
     private static final long serialVersionUID = 7723786006977745143L;
@@ -68,12 +67,10 @@ public class Table implements Serializable {
     }
 
     /**
-     * Перед добавлением строки выполняется проверка уникальности значения
-     * первичного ключа.
+     * Перед добавлением строки выполняется проверка уникальности значения первичного ключа.
      *
      * @param row добавляемая строка
-     * @return true - если строка добавлена, false - если обнаружен дубликат
-     *         первичного ключа
+     * @return true - если строка добавлена, false - если обнаружен дубликат первичного ключа
      */
     public boolean addRow(Row row) {
         Column primaryKey = null;
@@ -105,8 +102,11 @@ public class Table implements Serializable {
         rows.add(row);
         return true;
     }
+
     /**
      * Добавляет внешний ключ таблицы.
+     *
+     * @param foreignKey внешний ключ
      */
     public void addForeignKey(ForeignKey foreignKey) {
         foreignKeys.add(foreignKey);
@@ -114,10 +114,19 @@ public class Table implements Serializable {
 
     /**
      * Возвращает список внешних ключей таблицы.
+     *
+     * @return список внешних ключей таблицы
      */
     public List<ForeignKey> getForeignKeys() {
         return foreignKeys;
     }
+
+    /**
+     * Возвращает строку по первичному ключу.
+     *
+     * @param value значение
+     * @return строку таблицы
+     */
     public Row getRowByPrimaryKey(Object value) {
         if (rowsByPrimaryKey == null) {
             rowsByPrimaryKey = new java.util.HashMap<>();
@@ -144,6 +153,14 @@ public class Table implements Serializable {
 
         return rowsByPrimaryKey.get(value);
     }
+
+    /**
+     * Перестраивает индекс строк таблицы по значению первичного ключа.
+     *
+     * <p>Метод очищает текущий индекс, находит столбец с первичным ключом и заново связывает
+     * непустые значения этого ключа с соответствующими строками. Если первичный ключ в таблице
+     * отсутствует, индекс остаётся пустым.
+     */
     public void rebuildPrimaryKeyIndex() {
         rowsByPrimaryKey = new java.util.HashMap<>();
 

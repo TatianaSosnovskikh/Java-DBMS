@@ -1,4 +1,5 @@
 package index;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,31 +20,39 @@ public class Index implements Serializable {
         this.columnName = columnName;
         this.primaryKeyColumn = primaryKeyColumn;
     }
+
     public void add(Object indexedValue, Object primaryKeyValue) {
         if (indexedValue == null || primaryKeyValue == null) {
             return;
         }
         entries.computeIfAbsent(indexedValue, key -> new ArrayList<>()).add(primaryKeyValue);
     }
+
     public List<Object> getPrimaryKeys(Object indexedValue) {
         List<Object> result = entries.get(indexedValue);
         return result == null ? new ArrayList<>() : new ArrayList<>(result);
     }
+
     public String getIndexName() {
         return indexName;
     }
+
     public String getTableName() {
         return tableName;
     }
+
     public String getColumnName() {
         return columnName;
     }
+
     public String getPrimaryKeyColumn() {
         return primaryKeyColumn;
     }
+
     public Map<Object, List<Object>> getEntries() {
         return entries;
     }
+
     public void clear() {
         entries.clear();
     }

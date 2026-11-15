@@ -7,8 +7,7 @@ import java.util.Map;
 /**
  * База данных.
  *
- * <p>
- * Содержит коллекцию таблиц и методы управления ими.
+ * <p>Содержит коллекцию таблиц и методы управления ими.
  */
 public class Database implements Serializable {
     private Map<String, Table> tables;

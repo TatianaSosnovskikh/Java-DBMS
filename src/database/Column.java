@@ -3,8 +3,7 @@ package database;
 import java.io.Serializable;
 
 /**
- * Описание столбца таблицы. Каждый столбец имеет имя, тип данных и может
- * являться первичным ключом.
+ * Описание столбца таблицы. Каждый столбец имеет имя, тип данных и может являться первичным ключом.
  */
 public class Column implements Serializable {
     private String name;
@@ -14,8 +13,8 @@ public class Column implements Serializable {
     /**
      * Создаёт новый столбец.
      *
-     * @param name       имя столбца
-     * @param type       тип данных столбца
+     * @param name имя столбца
+     * @param type тип данных столбца
      * @param primaryKey признак первичного ключа
      */
     public Column(String name, DataType type, boolean primaryKey) {

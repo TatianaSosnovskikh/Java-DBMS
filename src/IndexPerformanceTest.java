@@ -3,7 +3,9 @@ import database.DataType;
 import database.Database;
 import database.Row;
 import database.Table;
+
 import index.IndexManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,9 +50,8 @@ public class IndexPerformanceTest {
         long withoutIndexTime = System.nanoTime() - start;
 
         start = System.nanoTime();
-        List<Row> withIndex = manager.findRows(
-                database, "performance_goods", "brand", "=", "'Brand42'"
-        );
+        List<Row> withIndex =
+                manager.findRows(database, "performance_goods", "brand", "=", "'Brand42'");
 
         long withIndexTime = System.nanoTime() - start;
 
@@ -59,8 +60,9 @@ public class IndexPerformanceTest {
         System.out.println("С индексом найдено: " + withIndex.size());
         System.out.printf("Без индекса: %.3f мс%n", withoutIndexTime / 1_000_000.0);
         System.out.printf("С индексом: %.3f мс%n", withIndexTime / 1_000_000.0);
-        System.out.println(withoutIndex.size() == withIndex.size()
-                ? "Результаты совпадают."
-                : "ОШИБКА: результаты различаются!");
+        System.out.println(
+                withoutIndex.size() == withIndex.size()
+                        ? "Результаты совпадают."
+                        : "ОШИБКА: результаты различаются!");
     }
 }
