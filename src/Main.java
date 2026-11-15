@@ -32,7 +32,7 @@ public class Main {
      *
      * @param args аргументы командной строки
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         // Инициализация хранилища и загрузка базы данных.
         // Если файл базы данных отсутствует, создаётся новая база.
