@@ -109,17 +109,10 @@ public class IndexManager {
             }
         }
 
-        Map<Object, Row> rowsByPrimaryKey = new HashMap<>();
-
-        for (Row row : table.getRows()) {
-            Object primaryKey = row.getValue(foundIndex.getPrimaryKeyColumn());
-            rowsByPrimaryKey.put(primaryKey, row);
-        }
-
         List<Row> result = new ArrayList<>();
 
         for (Object key : matchingKeys) {
-            Row row = rowsByPrimaryKey.get(key);
+            Row row = table.getRowByPrimaryKey(key);
 
             if (row != null) {
                 result.add(row);

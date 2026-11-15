@@ -58,7 +58,6 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     /**
      * Добавление записей в таблицу.
      */
-
     private String insert(
             ParsedQuery query,
             Table table,
@@ -126,10 +125,13 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
                 addedRows.add(row);
             }
 
+            table.rebuildPrimaryKeyIndex();
+
             return "Добавлено записей: " + addedRows.size();
 
         } catch (RuntimeException e) {
             table.getRows().removeAll(addedRows);
+            table.rebuildPrimaryKeyIndex();
             throw e;
         }
     }
@@ -176,7 +178,6 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     /**
      * Обновление записей таблицы.
      */
-
     private String update(
             ParsedQuery query,
             Table table,
@@ -249,6 +250,8 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
                 }
             }
 
+            table.rebuildPrimaryKeyIndex();
+
             return "Обновлено записей: " + count;
 
         } catch (RuntimeException e) {
@@ -263,10 +266,11 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
                 }
             }
 
+            table.rebuildPrimaryKeyIndex();
+
             throw e;
         }
     }
-
 
     /**
      * Удаление записей из таблицы.
@@ -303,6 +307,8 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
                 count++;
             }
         }
+
+        table.rebuildPrimaryKeyIndex();
 
         return "Удалено записей: " + count;
     }
