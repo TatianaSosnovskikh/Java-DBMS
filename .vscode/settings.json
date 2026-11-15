@@ -1,0 +1,4 @@
+{
+    "java.checkstyle.configuration": "${workspaceFolder}\\checkstyle.xml",
+    "java.format.settings.url": "eclipse-formatter.xml"
+}
