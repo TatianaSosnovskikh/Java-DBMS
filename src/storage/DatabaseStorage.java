@@ -16,6 +16,11 @@ public class DatabaseStorage {
     private static final String FILE_NAME = "data/database.dat";
 
     public void save(Database database) {
+        File file = new File(FILE_NAME);
+        File directory = file.getParentFile();
+        if (directory != null && !directory.exists()) {
+            directory.mkdirs();
+        }
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
             out.writeObject(database);
             System.out.println("База данных сохранена");
