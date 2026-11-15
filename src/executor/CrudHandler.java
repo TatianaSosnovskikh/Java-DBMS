@@ -15,11 +15,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-/*
-Обработчик операций INSERT, SELECT, UPDATE и DELETE.
-*/
+/**
+ * Обработчик операций INSERT, SELECT, UPDATE и DELETE.
+ * Реализует выполнение CRUD-запросов к таблицам базы данных.
+ */
 public class CrudHandler implements QueryExecutor.QueryHandler {
-
+    /**
+     * Выполняет SQL-запрос соответствующего типа.
+     *
+     * @param query разобранный SQL-запрос
+     * @param database база данных
+     * @param indexManager менеджер индексов
+     * @return результат выполнения запроса
+     */
     @Override
     public Object execute(
             ParsedQuery query,
@@ -53,7 +61,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         );
     }
 
-    /*
+    /**
     Добавление записей в таблицу.
     */
     private String insert(
@@ -123,7 +131,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         return "Добавлено записей: " + count;
     }
 
-    /*
+    /**
     Выборка записей из таблицы.
     */
     private List<Row> select(ParsedQuery query, Table table) {
@@ -162,7 +170,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         return result;
     }
 
-    /*
+    /**
     Обновление записей таблицы.
     */
     private String update(
@@ -208,7 +216,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         return "Обновлено записей: " + count;
     }
 
-    /*
+    /**
     Удаление записей из таблицы.
     */
     private String delete(
@@ -233,7 +241,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         return "Удалено записей: " + count;
     }
 
-    /*
+    /**
     Проверка условия WHERE.
     */
     private boolean checkCondition(
@@ -290,7 +298,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         );
     }
 
-    /*
+    /**
     Сравнение значений.
     */
     private int compareValues(
@@ -325,7 +333,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         }
     }
 
-    /*
+    /**
     Поиск столбца по названию.
     */
     private Column findColumn(Table table, String name) {
@@ -340,7 +348,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         );
     }
 
-    /*
+    /**
     Преобразование значения к нужному типу.
     */
     private Object convertValue(String value, DataType type) {

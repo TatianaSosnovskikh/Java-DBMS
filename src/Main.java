@@ -5,8 +5,18 @@ import executor.QueryExecutor;
 import database.Row;
 import java.util.List;
 
+/**
+ * Главный класс программы.
+ * Демонстрирует создание таблиц и выполнение CRUD-операций.
+ */
 public class Main {
 
+    /**
+     * Запускает программу, загружает базу данных,
+     * демонстрирует CRUD-операции и сохраняет результат.
+     *
+     * @param args аргументы командной строки
+     */
     public static void main(String[] args) {
         // Подключаем хранилище и загружаем базу
         DatabaseStorage storage = new DatabaseStorage();
@@ -70,7 +80,16 @@ public class Main {
                     queryExecutor.execute(
                             "SELECT id, categoryId, name, price FROM goods WHERE id = 1"
                     ),
-                    goods
+                    "id", "categoryId", "name", "price"
+            );
+
+            System.out.println("\n=== SELECT: только название и цена ===");
+
+            printSelectResult(
+                    queryExecutor.execute(
+                            "SELECT name, price FROM goods WHERE id = 1"
+                    ),
+                    "name", "price"
             );
 
             System.out.println("\n=== UPDATE: изменение цены ===");
@@ -87,7 +106,7 @@ public class Main {
                     queryExecutor.execute(
                             "SELECT id, categoryId, name, price FROM goods WHERE id = 1"
                     ),
-                    goods
+                    "id", "categoryId", "name", "price"
             );
 
             System.out.println("\n=== DELETE: удаление товара ===");
@@ -104,7 +123,7 @@ public class Main {
                     queryExecutor.execute(
                             "SELECT id, categoryId, name, price FROM goods WHERE id = 1"
                     ),
-                    goods
+                    "id", "categoryId", "name", "price"
             );
 
         } else {
@@ -115,7 +134,7 @@ public class Main {
                     queryExecutor.execute(
                             "SELECT id, categoryId, name, price FROM goods WHERE id = 1"
                     ),
-                    goods
+                    "id", "categoryId", "name", "price"
             );
         }
 
@@ -129,7 +148,11 @@ public class Main {
         storage.save(database);
     }
 
-
+    /**
+     * Выводит содержимое таблицы в консоль.
+     *
+     * @param table таблица для отображения
+     */
     private static void printTable(Table table) {
         // Заголовки
         for (Column column : table.getColumns()) {
@@ -152,26 +175,39 @@ public class Main {
             System.out.println("|");
         }
     }
-    private static void printSelectResult(Object result, Table table) {
+
+    /**
+     * Выводит результат SQL-запроса SELECT в табличном виде.
+     *
+     * @param result результат выполнения SELECT
+     * @param columnNames названия выбранных столбцов
+     */
+    private static void printSelectResult(
+            Object result,
+            String... columnNames
+    ) {
         List<Row> rows = (List<Row>) result;
 
         // Заголовки столбцов
-        for (Column column : table.getColumns()) {
-            System.out.printf("| %-15s ", column.getName());
+        for (String columnName : columnNames) {
+            System.out.printf("| %-15s ", columnName);
         }
         System.out.println("|");
 
         // Разделитель
-        for (Column column : table.getColumns()) {
+        for (String columnName : columnNames) {
             System.out.print("-------------------");
         }
         System.out.println();
 
         // Данные
         for (Row row : rows) {
-            for (Column column : table.getColumns()) {
-                Object value = row.getValue(column.getName());
-                System.out.printf("| %-15s ", value == null ? "null" : value);
+            for (String columnName : columnNames) {
+                Object value = row.getValue(columnName);
+                System.out.printf(
+                        "| %-15s ",
+                        value == null ? "null" : value
+                );
             }
             System.out.println("|");
         }
