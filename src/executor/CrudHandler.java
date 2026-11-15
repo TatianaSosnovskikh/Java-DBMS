@@ -1,9 +1,9 @@
-
 package executor;
 
 import database.Column;
 import database.DataType;
 import database.Database;
+import database.ForeignKey;
 import database.Row;
 import database.Table;
 import index.IndexManager;
@@ -11,23 +11,17 @@ import parser.ParsedQuery;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Обработчик операций INSERT, SELECT, UPDATE и DELETE.
- * Реализует выполнение CRUD-запросов к таблицам базы данных.
  */
 public class CrudHandler implements QueryExecutor.QueryHandler {
-    /**
-     * Выполняет SQL-запрос соответствующего типа.
-     *
-     * @param query разобранный SQL-запрос
-     * @param database база данных
-     * @param indexManager менеджер индексов
-     * @return результат выполнения запроса
-     */
+
     @Override
     public Object execute(
             ParsedQuery query,
@@ -41,7 +35,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         }
 
         if (query.getQueryType() == ParsedQuery.QueryType.INSERT) {
-            return insert(query, table, indexManager);
+            return insert(query, table, database);
         }
 
         if (query.getQueryType() == ParsedQuery.QueryType.SELECT) {
@@ -49,11 +43,11 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         }
 
         if (query.getQueryType() == ParsedQuery.QueryType.UPDATE) {
-            return update(query, table, indexManager);
+            return update(query, table, database);
         }
 
         if (query.getQueryType() == ParsedQuery.QueryType.DELETE) {
-            return delete(query, table, indexManager);
+            return delete(query, table, database);
         }
 
         throw new UnsupportedOperationException(
@@ -62,12 +56,12 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Добавление записей в таблицу.
-    */
+     * Добавление записей в таблицу.
+     */
     private String insert(
             ParsedQuery query,
             Table table,
-            IndexManager indexManager
+            Database database
     ) {
         List<Column> columns = table.getColumns();
         List<String> insertColumns = query.getColumns();
@@ -119,6 +113,8 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
                 }
             }
 
+            checkForeignKeys(table, row, database);
+
             if (!table.addRow(row)) {
                 throw new IllegalArgumentException(
                         "Запись с таким первичным ключом уже существует"
@@ -132,8 +128,8 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Выборка записей из таблицы.
-    */
+     * Выборка записей из таблицы.
+     */
     private List<Row> select(ParsedQuery query, Table table) {
         List<Row> result = new ArrayList<>();
         List<Row> rows;
@@ -171,12 +167,12 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Обновление записей таблицы.
-    */
+     * Обновление записей таблицы.
+     */
     private String update(
             ParsedQuery query,
             Table table,
-            IndexManager indexManager
+            Database database
     ) {
         int count = 0;
 
@@ -184,29 +180,61 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
             if (query.getConditionColumn() == null
                     || checkCondition(query, row, table)) {
 
-                for (Map.Entry<String, String> assignment
-                        : query.getAssignments().entrySet()) {
+                Map<String, Object> oldValues = new HashMap<>();
 
-                    Column column = findColumn(table, assignment.getKey());
+                try {
+                    for (Map.Entry<String, String> assignment
+                            : query.getAssignments().entrySet()) {
 
-                    Object newValue = convertValue(
-                            assignment.getValue(),
-                            column.getType()
-                    );
+                        Column column = findColumn(table, assignment.getKey());
 
-                    if (column.isPrimaryKey()) {
-                        for (Row otherRow : table.getRows()) {
-                            if (otherRow != row
-                                    && newValue.equals(
-                                    otherRow.getValue(column.getName()))) {
+                        oldValues.put(
+                                column.getName(),
+                                row.getValue(column.getName())
+                        );
+
+                        Object newValue = convertValue(
+                                assignment.getValue(),
+                                column.getType()
+                        );
+
+                        if (column.isPrimaryKey()) {
+                            for (Row otherRow : table.getRows()) {
+                                if (otherRow != row
+                                        && Objects.equals(
+                                        newValue,
+                                        otherRow.getValue(column.getName()))) {
+                                    throw new IllegalArgumentException(
+                                            "Запись с таким первичным ключом уже существует"
+                                    );
+                                }
+                            }
+
+                            // Запрещаем изменение первичного ключа,
+                            // если на запись ссылается другая таблица.
+                            if (!Objects.equals(
+                                    row.getValue(column.getName()),
+                                    newValue
+                            ) && isReferencedByOtherTable(table, row, database)) {
                                 throw new IllegalArgumentException(
-                                        "Запись с таким первичным ключом уже существует"
+                                        "Нельзя изменить первичный ключ: "
+                                                + "на запись ссылается другая таблица"
                                 );
                             }
                         }
+
+                        row.setValue(column.getName(), newValue);
                     }
 
-                    row.setValue(column.getName(), newValue);
+                    checkForeignKeys(table, row, database);
+
+                } catch (RuntimeException e) {
+                    for (Map.Entry<String, Object> oldValue
+                            : oldValues.entrySet()) {
+                        row.setValue(oldValue.getKey(), oldValue.getValue());
+                    }
+
+                    throw e;
                 }
 
                 count++;
@@ -217,15 +245,29 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Удаление записей из таблицы.
-    */
+     * Удаление записей из таблицы.
+     */
     private String delete(
             ParsedQuery query,
             Table table,
-            IndexManager indexManager
+            Database database
     ) {
         int count = 0;
 
+        // Сначала проверяем все записи, которые собираемся удалить.
+        for (Row row : table.getRows()) {
+            if (query.getConditionColumn() == null
+                    || checkCondition(query, row, table)) {
+
+                if (isReferencedByOtherTable(table, row, database)) {
+                    throw new IllegalArgumentException(
+                            "Нельзя удалить запись: на неё ссылается другая таблица"
+                    );
+                }
+            }
+        }
+
+        // Если проверка пройдена, удаляем записи.
         Iterator<Row> iterator = table.getRows().iterator();
 
         while (iterator.hasNext()) {
@@ -242,8 +284,93 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Проверка условия WHERE.
-    */
+     * Проверяет существование записей, на которые ссылаются внешние ключи.
+     */
+    private void checkForeignKeys(
+            Table table,
+            Row row,
+            Database database
+    ) {
+        for (ForeignKey foreignKey : table.getForeignKeys()) {
+            Object value = row.getValue(foreignKey.getColumnName());
+
+            // NULL допускается для внешнего ключа.
+            if (value == null) {
+                continue;
+            }
+
+            Table referencedTable = database.getTable(
+                    foreignKey.getReferencedTable()
+            );
+
+            if (referencedTable == null) {
+                throw new IllegalArgumentException(
+                        "Таблица внешнего ключа не найдена"
+                );
+            }
+
+            boolean found = false;
+
+            for (Row referencedRow : referencedTable.getRows()) {
+                Object referencedValue = referencedRow.getValue(
+                        foreignKey.getReferencedColumn()
+                );
+
+                if (Objects.equals(value, referencedValue)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new IllegalArgumentException(
+                        "Нарушение внешнего ключа: значение "
+                                + value + " отсутствует в таблице "
+                                + foreignKey.getReferencedTable()
+                );
+            }
+        }
+    }
+
+    /**
+     * Проверяет, используется ли запись другой таблицей.
+     */
+    private boolean isReferencedByOtherTable(
+            Table table,
+            Row row,
+            Database database
+    ) {
+        for (Table otherTable : database.getTables().values()) {
+            for (ForeignKey foreignKey : otherTable.getForeignKeys()) {
+
+                if (!foreignKey.getReferencedTable()
+                        .equalsIgnoreCase(table.getName())) {
+                    continue;
+                }
+
+                Object parentValue = row.getValue(
+                        foreignKey.getReferencedColumn()
+                );
+
+                for (Row childRow : otherTable.getRows()) {
+                    Object childValue = childRow.getValue(
+                            foreignKey.getColumnName()
+                    );
+
+                    if (parentValue != null
+                            && Objects.equals(parentValue, childValue)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Проверка условия WHERE.
+     */
     private boolean checkCondition(
             ParsedQuery query,
             Row row,
@@ -299,8 +426,8 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Сравнение значений.
-    */
+     * Сравнение значений.
+     */
     private int compareValues(
             Object first,
             Object second,
@@ -308,24 +435,15 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     ) {
         switch (type) {
             case INTEGER:
-                return Integer.compare(
-                        (Integer) first,
-                        (Integer) second
-                );
+                return Integer.compare((Integer) first, (Integer) second);
             case DOUBLE:
-                return Double.compare(
-                        (Double) first,
-                        (Double) second
-                );
+                return Double.compare((Double) first, (Double) second);
             case STRING:
                 return ((String) first).compareTo((String) second);
             case DATE:
                 return ((LocalDate) first).compareTo((LocalDate) second);
             case BOOLEAN:
-                return Boolean.compare(
-                        (Boolean) first,
-                        (Boolean) second
-                );
+                return Boolean.compare((Boolean) first, (Boolean) second);
             default:
                 throw new IllegalArgumentException(
                         "Неизвестный тип данных"
@@ -334,8 +452,8 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Поиск столбца по названию.
-    */
+     * Поиск столбца по названию.
+     */
     private Column findColumn(Table table, String name) {
         for (Column column : table.getColumns()) {
             if (column.getName().equalsIgnoreCase(name)) {
@@ -349,8 +467,8 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     }
 
     /**
-    Преобразование значения к нужному типу.
-    */
+     * Преобразование значения к нужному типу.
+     */
     private Object convertValue(String value, DataType type) {
         String text = value.trim();
 
