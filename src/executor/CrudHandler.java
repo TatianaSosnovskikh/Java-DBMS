@@ -58,6 +58,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     /**
      * Добавление записей в таблицу.
      */
+
     private String insert(
             ParsedQuery query,
             Table table,
@@ -67,64 +68,70 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
         List<String> insertColumns = query.getColumns();
         List<List<String>> rows = query.getRowsValues();
 
-        int count = 0;
+        List<Row> addedRows = new ArrayList<>();
 
-        for (List<String> values : rows) {
-            if (insertColumns.isEmpty() && values.size() != columns.size()) {
-                throw new IllegalArgumentException(
-                        "Неверное количество значений"
-                );
-            }
-
-            if (!insertColumns.isEmpty()
-                    && insertColumns.size() != values.size()) {
-                throw new IllegalArgumentException(
-                        "Неверное количество значений"
-                );
-            }
-
-            Row row = new Row();
-
-            for (Column column : columns) {
-                row.setValue(column.getName(), null);
-            }
-
-            for (int i = 0; i < values.size(); i++) {
-                Column column;
-
-                if (insertColumns.isEmpty()) {
-                    column = columns.get(i);
-                } else {
-                    column = findColumn(table, insertColumns.get(i));
-                }
-
-                row.setValue(
-                        column.getName(),
-                        convertValue(values.get(i), column.getType())
-                );
-            }
-
-            for (Column column : columns) {
-                if (column.isPrimaryKey()
-                        && row.getValue(column.getName()) == null) {
+        try {
+            for (List<String> values : rows) {
+                if (insertColumns.isEmpty() && values.size() != columns.size()) {
                     throw new IllegalArgumentException(
-                            "Первичный ключ не может быть пустым"
+                            "Неверное количество значений"
                     );
                 }
+
+                if (!insertColumns.isEmpty()
+                        && insertColumns.size() != values.size()) {
+                    throw new IllegalArgumentException(
+                            "Неверное количество значений"
+                    );
+                }
+
+                Row row = new Row();
+
+                for (Column column : columns) {
+                    row.setValue(column.getName(), null);
+                }
+
+                for (int i = 0; i < values.size(); i++) {
+                    Column column;
+
+                    if (insertColumns.isEmpty()) {
+                        column = columns.get(i);
+                    } else {
+                        column = findColumn(table, insertColumns.get(i));
+                    }
+
+                    row.setValue(
+                            column.getName(),
+                            convertValue(values.get(i), column.getType())
+                    );
+                }
+
+                for (Column column : columns) {
+                    if (column.isPrimaryKey()
+                            && row.getValue(column.getName()) == null) {
+                        throw new IllegalArgumentException(
+                                "Первичный ключ не может быть пустым"
+                        );
+                    }
+                }
+
+                checkForeignKeys(table, row, database);
+
+                if (!table.addRow(row)) {
+                    throw new IllegalArgumentException(
+                            "Запись с таким первичным ключом уже существует"
+                    );
+                }
+
+                addedRows.add(row);
             }
 
-            checkForeignKeys(table, row, database);
+            return "Добавлено записей: " + addedRows.size();
 
-            if (!table.addRow(row)) {
-                throw new IllegalArgumentException(
-                        "Запись с таким первичным ключом уже существует"
-                );
-            }
-
-            count++;
+        } catch (RuntimeException e) {
+            table.getRows().removeAll(addedRows);
+            throw e;
         }
-
-        return "Добавлено записей: " + count;
     }
 
     /**
@@ -169,6 +176,7 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     /**
      * Обновление записей таблицы.
      */
+
     private String update(
             ParsedQuery query,
             Table table,
@@ -176,22 +184,34 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
     ) {
         int count = 0;
 
-        for (Row row : table.getRows()) {
-            if (query.getConditionColumn() == null
-                    || checkCondition(query, row, table)) {
+        List<Row> updatedRows = new ArrayList<>();
+        List<Map<String, Object>> backups = new ArrayList<>();
 
-                Map<String, Object> oldValues = new HashMap<>();
+        try {
+            for (Row row : table.getRows()) {
+                if (query.getConditionColumn() == null
+                        || checkCondition(query, row, table)) {
 
-                try {
-                    for (Map.Entry<String, String> assignment
-                            : query.getAssignments().entrySet()) {
+                    Map<String, Object> oldValues = new HashMap<>();
 
-                        Column column = findColumn(table, assignment.getKey());
+                    // Сохраняем исходные значения строки.
+                    for (String columnName : query.getAssignments().keySet()) {
+                        Column column = findColumn(table, columnName);
 
                         oldValues.put(
                                 column.getName(),
                                 row.getValue(column.getName())
                         );
+                    }
+
+                    // Сохраняем резервную копию до изменения строки.
+                    updatedRows.add(row);
+                    backups.add(oldValues);
+
+                    for (Map.Entry<String, String> assignment
+                            : query.getAssignments().entrySet()) {
+
+                        Column column = findColumn(table, assignment.getKey());
 
                         Object newValue = convertValue(
                                 assignment.getValue(),
@@ -210,8 +230,6 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
                                 }
                             }
 
-                            // Запрещаем изменение первичного ключа,
-                            // если на запись ссылается другая таблица.
                             if (!Objects.equals(
                                     row.getValue(column.getName()),
                                     newValue
@@ -227,22 +245,28 @@ public class CrudHandler implements QueryExecutor.QueryHandler {
                     }
 
                     checkForeignKeys(table, row, database);
-
-                } catch (RuntimeException e) {
-                    for (Map.Entry<String, Object> oldValue
-                            : oldValues.entrySet()) {
-                        row.setValue(oldValue.getKey(), oldValue.getValue());
-                    }
-
-                    throw e;
+                    count++;
                 }
-
-                count++;
             }
-        }
 
-        return "Обновлено записей: " + count;
+            return "Обновлено записей: " + count;
+
+        } catch (RuntimeException e) {
+            // Откатываем все строки, изменённые этим запросом.
+            for (int i = 0; i < updatedRows.size(); i++) {
+                Row row = updatedRows.get(i);
+                Map<String, Object> oldValues = backups.get(i);
+
+                for (Map.Entry<String, Object> oldValue
+                        : oldValues.entrySet()) {
+                    row.setValue(oldValue.getKey(), oldValue.getValue());
+                }
+            }
+
+            throw e;
+        }
     }
+
 
     /**
      * Удаление записей из таблицы.
